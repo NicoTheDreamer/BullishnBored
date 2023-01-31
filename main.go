@@ -1,24 +1,14 @@
 package main
 
 import (
-	//"strings"
-	//"net/rpc"
-	//"bufio"
 	"bytes"
 	"encoding/gob"
 	"fmt"
 	"log"
-
-	//"strings"
-
-	//"os"
 	"time"
-
-	//"github.com/deroproject/derohe/rpc"
 
 	"github.com/deroproject/graviton"
 	"github.com/g45t345rt/derosphere/rpc_client"
-	//"github.com/ybbus/jsonrpc/v2"
 )
 
 type User struct {
@@ -50,7 +40,7 @@ func main() {
 
 	//initialize daemon
 	var Daemon rpc_client.Daemon
-	fmt.Println("Daemon address, port? (Ex:http://127.0.0.1:40402)")
+	fmt.Println("Daemon address, port? (Ex:http://127.0.0.1:10102)")
 	var initPrompt string
 	fmt.Scan(&initPrompt)
 	Daemon.SetClient(initPrompt)
@@ -103,6 +93,8 @@ func main() {
 	fmt.Println(str)
 
 	fmt.Println("Hi, welcome to the DERO Bullish'n'Bored System!")
+
+	//Initialize user
 LOGIN:
 	fmt.Println("Have you been here before? (Y/N)")
 	fmt.Scan(&initPrompt)
@@ -116,8 +108,9 @@ LOGIN:
 		goto LOGIN
 
 	}
-	fmt.Printf("User %+v has been logged in.\n", usr)
+	fmt.Printf("User %+v has been logged in.\n", usr.UserName)
 
+	//Connect wallet
 CONNECT_WALLET:
 	fmt.Println("Would you like to connect your DERO wallet? (Y/N)")
 	initPrompt = ""
@@ -129,6 +122,7 @@ CONNECT_WALLET:
 		goto CONNECT_WALLET
 	}
 
+	//main menu
 	var mainSel string
 MAIN_MENU:
 	fmt.Println("Main Menu:\n1. Channels\n2. Inbox\n3. Games\n4. Quit")
@@ -140,6 +134,7 @@ MAIN_MENU:
 	}
 	switch mainSel {
 	case "1":
+		//channel menu
 	CH_MENU:
 		fmt.Println("Pick a channel: ")
 		fmt.Print("1: Market Talk\n2: DERO Chat\n3: The Rabbit Hole\n4: Quit\n")
@@ -165,6 +160,9 @@ MAIN_MENU:
 					error.Error(err)
 				}
 				mt := chanDecode(data)
+				if len(mt.Messages) == 0 {
+					break
+				}
 				for n := len(mt.Messages); n > len(mt.Messages)-10; n-- {
 					fmt.Println(mt.Messages[n])
 				}
@@ -209,23 +207,23 @@ MAIN_MENU:
 			}
 			switch dcSel {
 			case "1":
-				data, err := chTree.Get([]byte("mt"))
+				data, err := chTree.Get([]byte("dc"))
 				if err != nil {
 					error.Error(err)
 				}
-				mt := chanDecode(data)
-				for n := len(mt.Messages); n > len(mt.Messages)-10; n-- {
-					fmt.Println(mt.Messages[n])
+				dc := chanDecode(data)
+				for n := len(dc.Messages); n > len(dc.Messages)-10; n-- {
+					fmt.Println(dc.Messages[n])
 				}
 				goto DC_MENU
 			case "2":
-				data, err := chTree.Get([]byte("mt"))
+				data, err := chTree.Get([]byte("dc"))
 				if err != nil {
 					error.Error(err)
 				}
-				mt := chanDecode(data)
-				for n := len(mt.Messages); n >= 0; n-- {
-					fmt.Println(mt.Messages[n])
+				dc := chanDecode(data)
+				for n := len(dc.Messages); n >= 0; n-- {
+					fmt.Println(dc.Messages[n])
 				}
 				goto DC_MENU
 			case "3":
@@ -238,7 +236,7 @@ MAIN_MENU:
 					fmt.Println("Too long.  Try again")
 					goto DC_TOOLONG
 				}
-				createPost(usr.UserName, post, time.Now(), "mt", chTree)
+				createPost(usr.UserName, post, time.Now(), "dc", chTree)
 				fmt.Println("Post successful!  Thanks for your contribution!")
 				goto DC_MENU
 			case "4":
@@ -260,23 +258,23 @@ MAIN_MENU:
 			}
 			switch rhSel {
 			case "1":
-				data, err := chTree.Get([]byte("mt"))
+				data, err := chTree.Get([]byte("rh"))
 				if err != nil {
 					error.Error(err)
 				}
-				mt := chanDecode(data)
-				for n := len(mt.Messages); n > len(mt.Messages)-10; n-- {
-					fmt.Println(mt.Messages[n])
+				rh := chanDecode(data)
+				for n := len(rh.Messages); n > len(rh.Messages)-10; n-- {
+					fmt.Println(rh.Messages[n])
 				}
 				goto RH_MENU
 			case "2":
-				data, err := chTree.Get([]byte("mt"))
+				data, err := chTree.Get([]byte("rh"))
 				if err != nil {
 					error.Error(err)
 				}
-				mt := chanDecode(data)
-				for n := len(mt.Messages); n >= 0; n-- {
-					fmt.Println(mt.Messages[n])
+				rh := chanDecode(data)
+				for n := len(rh.Messages); n >= 0; n-- {
+					fmt.Println(rh.Messages[n])
 				}
 				goto RH_MENU
 			case "3":
@@ -288,7 +286,7 @@ MAIN_MENU:
 					fmt.Println("Too long.  Try again")
 					goto RH_TOOLONG
 				}
-				createPost(usr.UserName, post, time.Now(), "mt", chTree)
+				createPost(usr.UserName, post, time.Now(), "rh", chTree)
 				fmt.Println("Post successful!  Thanks for your contribution!")
 				goto RH_MENU
 			case "4":
@@ -299,8 +297,13 @@ MAIN_MENU:
 		}
 	case "2":
 		fmt.Println("Let's check your messages..")
-		for n := 0; n < len(usr.Inbox); n-- {
-			fmt.Println(usr.Inbox[n])
+		if len(usr.Inbox) == 0 {
+			fmt.Println("Sorry, you don't currently have any messages. I still like you though..")
+		}
+		if len(usr.Inbox) != 0 {
+			for n := 0; n <= len(usr.Inbox); n-- {
+				fmt.Println(usr.Inbox[n])
+			}
 		}
 		var reply string
 	MSG_CHECK:
@@ -335,16 +338,18 @@ MAIN_MENU:
 		var game string
 	GAME_CHECK:
 		fmt.Println("So you fancy a game, huh?  Right now we offer two games, tic-tac-toe, and guess the number.  Play with a friend!")
-		fmt.Println("1. Tic-Tac-Toe\n2. Guess the Number")
+		fmt.Println("1. Tic-Tac-Toe\n2. Guess the Number\n3. Main menu")
 		game = ""
 		fmt.Scan(&game)
 		switch game {
 		case "1":
-			//tic-tac-toe
+			//TODO tic-tac-toe
 			goto GAME_CHECK
 		case "2":
-			//guess the number
+			//TODO guess the number
 			goto GAME_CHECK
+		case "3":
+			goto MAIN_MENU
 		}
 		fmt.Println("Invalid input. Try again.")
 		goto GAME_CHECK
@@ -352,7 +357,7 @@ MAIN_MENU:
 		goto QUIT
 	}
 QUIT:
-	fmt.Println("Bye!")
+	fmt.Println("Thanks for visiting the Bullish'n'Bored system.  You're awesome, have a great life!")
 }
 
 // FUNCTION DEFINITIONS
@@ -385,7 +390,6 @@ L3:
 	fmt.Scan(&uN)
 	fmt.Println("Password?")
 	fmt.Scan(&uP)
-
 	data := treeGet(uN, t)
 	user := userDecode(data)
 	if user.UserPass != uP {
@@ -395,17 +399,19 @@ L3:
 	u = &user
 }
 
-func retrievePost(id1 int, tree *graviton.Tree) {
+/*func retrievePost(id1 int, tree *graviton.Tree) {
 	key := fmt.Sprint(id1)
 	got, err := tree.Get([]byte(key))
 	if err != nil {
 		fmt.Println("Tree get error: ", err)
 	}
 	fmt.Printf("Value retrieved from DB\nID=%d\nMessage=%s\n", id1, string(got))
-}
+}*/
 
 func createPost(author string, body string, time time.Time, channel string, tree *graviton.Tree) {
-	// todo
+	post := Message{author, body, time}
+	postByte := msgEncode(post)
+	tree.Put([]byte(channel), postByte)
 }
 
 func userEncode(u User) []byte {
@@ -481,9 +487,4 @@ func treeGet(name string, t *graviton.Tree) []byte {
 		log.Fatal("tree get error:", err)
 	}
 	return data
-}
-
-func initUser(name string, pass string, wallet rpc_client.Wallet, inbox []Message) User {
-	newUser := User{name, pass, wallet, inbox}
-	return newUser
 }
