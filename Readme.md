@@ -6,3 +6,4 @@ This is my offering to the DERO community, I look forward to contributing in mor
 
 Luvs ya,
 -Nico
+dero1qy58343j60xdc927m3ptzh3a0m05u3ezzgats5n90ag4v84wf32r5qq0fcfa6
